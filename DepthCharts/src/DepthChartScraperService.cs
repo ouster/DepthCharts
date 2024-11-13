@@ -1,4 +1,6 @@
 
+using HtmlAgilityPack;
+
 namespace DepthCharts;
 
 public class DepthChartScraperService 
@@ -35,5 +37,12 @@ public class DepthChartScraperService
         var scraper = GetScraperForSport(sport);
         
         return await scraper.GetTeamDepthChart(teamName);
+    }
+
+    public async Task<object?> ScrapeTeamCodes(string sport)
+    {
+        var scraper = GetScraperForSport(sport);
+
+        return await scraper.GetTeamDepthChartCodes();
     }
 }

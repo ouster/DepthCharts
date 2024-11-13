@@ -15,6 +15,16 @@ public class DepthChartController(DepthChartScraperService depthChartScraperServ
 
         return Ok(depthChart);
     }
+    
+    [HttpGet($"{{{nameof(sport)}}}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [Produces("application/json")]
+    public async Task<IActionResult> GetTeamDepthChartCodes(string sport)
+    {
+        var teamCodes = await depthChartScraperService.ScrapeTeamCodes(sport);
+
+        return Ok(teamCodes);
+    }
 
     [HttpPost("player")]
     [ProducesResponseType(StatusCodes.Status201Created)]

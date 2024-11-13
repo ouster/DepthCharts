@@ -13,7 +13,7 @@ public class NflDepthChartScraperTest : IDisposable
         var html = File.ReadAllText("./data/OurladsNFLPrinter-FriendlyDepthCharts.html");
         
         // Create the mocks for the dependencies
-        var mockHttpClientHelper = new Mock<DepthChartScraperHttpClientHelper>(MockBehavior.Strict, new HttpClient(), new Mock<IOptions<DepthChartsUrlsSettings>>().Object, new Mock<ILogger<DepthChartScraperHttpClientHelper>>().Object);
+        var mockHttpClientHelper = new Mock<NflDepthChartScraperHttpClientHelper>(MockBehavior.Strict, new HttpClient(), new Mock<IOptions<DepthChartsUrlsSettings>>().Object, new Mock<ILogger<NflDepthChartScraperHttpClientHelper>>().Object);
         var mockLogger = new Mock<ILogger<NflDepthChartScraper>>();
         
         var scraper = new NflDepthChartScraper(mockHttpClientHelper.Object, mockLogger.Object);

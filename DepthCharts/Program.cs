@@ -20,8 +20,8 @@ builder.Services.AddLogging();
 
 
 
-builder.Services.AddScoped<DepthChartScraperHttpClientHelper>();
-builder.Services.AddHttpClient<DepthChartScraperHttpClientHelper>();
+builder.Services.AddScoped<NflDepthChartScraperHttpClientHelper>();
+builder.Services.AddHttpClient<NflDepthChartScraperHttpClientHelper>();
 builder.Services.Configure<DepthChartsUrlsSettings>(builder.Configuration.GetSection("DepthChartsUrls"));
 
 builder.Services.AddSingleton<DepthChartsUrlsSettings>();

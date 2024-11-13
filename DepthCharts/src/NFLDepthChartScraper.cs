@@ -5,13 +5,13 @@ using Microsoft.Extensions.Options;
 
 namespace DepthCharts;
 
-public class NflDepthChartScraper(DepthChartScraperHttpClientHelper depthChartScraperHttpClientHelper, ILogger<NflDepthChartScraper> logger) : AbstractDepthChartScraper, IDepthChartScraper 
+public class NflDepthChartScraper(NflDepthChartScraperHttpClientHelper nflDepthChartScraperHttpClientHelper, ILogger<NflDepthChartScraper> logger) : AbstractDepthChartScraper, IDepthChartScraper 
 {
     public string Sport { get; } = "NFL";
 
     public async Task<ParsedDepthChart> GetTeamDepthChart(string teamName)
     {
-        var html = await depthChartScraperHttpClientHelper.GetTeamDepthChartHtml(teamName);
+        var html = await nflDepthChartScraperHttpClientHelper.GetTeamDepthChartHtml(teamName);
         return GetTeamDepthChart(teamName, html);
     }
 
@@ -23,9 +23,8 @@ public class NflDepthChartScraper(DepthChartScraperHttpClientHelper depthChartSc
             ParsedDepthChartData = []
         };
 
-        var document = AbstractDepthChartScraper.RemoveNbsp(html);
+        var document = RemoveNbsp(html);
 
-        // Refine table row selection for accuracy
         var table = document.DocumentNode.SelectSingleNode("//table[@id='gvChart']");
         if (table == null)
         {
@@ -44,7 +43,7 @@ public class NflDepthChartScraper(DepthChartScraperHttpClientHelper depthChartSc
                 continue;
             if (columns.Count == 1)
                 section = columns[0].InnerText.Trim();
-            if (columns.Count < 3) continue; // Ensure we have at least three columns
+            if (columns.Count < 3) continue; 
 
             var position = columns[0].InnerText.Trim();
 
@@ -82,7 +81,47 @@ public class NflDepthChartScraper(DepthChartScraperHttpClientHelper depthChartSc
         return depthChart;
     }
 
+    public async Task<SortedSet<string>> GetTeamDepthChartCodes()
+    {
+        var html = await nflDepthChartScraperHttpClientHelper.GetTeamDepthChartCodesHtml();
+        return GetTeamDepthChartCodes(html);
+    }
+    
+    private SortedSet<string> GetTeamDepthChartCodes(string html){
+        var document = RemoveNbsp(html);
+        
+        var table = document.DocumentNode.SelectSingleNode("//table[@id='gvChart']");
+        if (table == null)
+        {
+            throw new DepthChartParseException("Table not found on the page.");
+        }
 
+        SortedSet<string> codes = [];
+        
+        var rows = table.SelectNodes(".//tr");
+        foreach (var row in rows)
+        {
+            var columns = row.SelectNodes("td")?.Where(cell => !string.IsNullOrWhiteSpace(cell.InnerText.Trim()))
+                .ToList();
+
+            if (columns == null)
+                continue;
+            if (columns.Count >= 3)
+            {
+                var teamCode = columns[0].InnerText.Trim();
+                codes.Add(teamCode);
+            }
+        }
+
+        if (codes.Count != Nofltteams)
+        {
+            logger.LogWarning($"Expected {Nofltteams} team codes, got {codes.Count}");
+        }
+
+        return codes;
+    }
+
+    private const int Nofltteams = 32;
 }
 
 public class DepthChartParseException(string msg) : Exception(msg);
