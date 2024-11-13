@@ -87,7 +87,7 @@ public class NflDepthChartScraper(NflDepthChartScraperHttpClientHelper nflDepthC
         return GetTeamDepthChartCodes(html);
     }
     
-    private SortedSet<string> GetTeamDepthChartCodes(string html){
+    public SortedSet<string> GetTeamDepthChartCodes(string html){
         var document = RemoveNbsp(html);
         
         var table = document.DocumentNode.SelectSingleNode("//table[@id='gvChart']");
@@ -121,7 +121,7 @@ public class NflDepthChartScraper(NflDepthChartScraperHttpClientHelper nflDepthC
         return codes;
     }
 
-    private const int Nofltteams = 32;
+    public const int Nofltteams = 32;
 }
 
 public class DepthChartParseException(string msg) : Exception(msg);

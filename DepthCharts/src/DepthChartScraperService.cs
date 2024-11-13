@@ -1,6 +1,3 @@
-
-using HtmlAgilityPack;
-
 namespace DepthCharts;
 
 public class DepthChartScraperService 
@@ -21,8 +18,8 @@ public class DepthChartScraperService
 
         _logger = logger;
     }
-    
-    public IDepthChartScraper GetScraperForSport(string sport)
+
+    private IDepthChartScraper GetScraperForSport(string sport)
     {
         if (_scrapers.TryGetValue(sport, out var forSport))
         {
