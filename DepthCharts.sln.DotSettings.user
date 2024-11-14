@@ -38,6 +38,8 @@
     &lt;ProjectFile&gt;5D449D7C-96B9-4BB0-8D3E-257F02246A51/d:tests/f:DepthChartServiceTest.cs&lt;/ProjectFile&gt;
     &lt;TestAncestor&gt;
       &lt;TestId&gt;xUnit::5D449D7C-96B9-4BB0-8D3E-257F02246A51::net8.0::DepthCharts.tests.NflDepthChartScraperTest.TestOurLadsDepthChartTampaBayScraper&lt;/TestId&gt;
+      &lt;TestId&gt;xUnit::5D449D7C-96B9-4BB0-8D3E-257F02246A51::net8.0::DepthCharts.tests.DepthChartServiceTests.AddPlayerToDepthChart_ShouldAddPlayersAtCorrectPositions1&lt;/TestId&gt;
+      &lt;TestId&gt;xUnit::5D449D7C-96B9-4BB0-8D3E-257F02246A51::net8.0::DepthCharts.tests.DepthChartServiceTests.AddPlayerToDepthChart_ShouldAddPlayersAtCorrectPositions&lt;/TestId&gt;
     &lt;/TestAncestor&gt;
   &lt;/Or&gt;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>

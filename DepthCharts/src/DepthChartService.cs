@@ -6,7 +6,7 @@ using DepthCharts.Models;
 
 namespace DepthCharts
 {
-    public class DepthChartService
+    public class DepthChartService : IDepthChartService
     {
         private readonly Dictionary<string, Dictionary<string, Dictionary<string, SortedList<long, PlayerEntryModel>>>>
             _depthCharts = new();
@@ -54,12 +54,7 @@ namespace DepthCharts
             var depthChart = _depthCharts[sport][team][position];
             var player = depthChart.Values.FirstOrDefault(p => p.PlayerName == playerName);
 
-            if (player == null)
-            {
-                return [];
-            }
-
-            return depthChart.Values.Where(p => p.PositionDepth > player.PositionDepth).ToList();
+            return player != null ? depthChart.Values.Where(p => p.PositionDepth > player.PositionDepth).ToList() : [];
         }
 
         public void RemovePlayerFromDepthChart(string sport, string team, string position, string playerName)
@@ -88,5 +83,39 @@ namespace DepthCharts
                 }
             }
         }
+        
+        public void GetFullDepthChart(string sport, string team)
+        {
+            if (!_depthCharts.ContainsKey(sport) || !_depthCharts[sport].ContainsKey(team))
+            {
+                Console.WriteLine("No depth chart found for the specified sport and team.");
+                return;
+            }
+
+            var teamDepthChart = _depthCharts[sport][team];
+        
+            Console.WriteLine($"Full Depth Chart for {team} ({sport}):");
+        
+            foreach (var position in teamDepthChart)
+            {
+                Console.WriteLine($"  {position.Key}:");
+                foreach (var player in position.Value.Values)
+                {
+                    Console.WriteLine($"    {player.PlayerName} (#{player.PlayerNumber}) - Depth: {player.PositionDepth}");
+                }
+            }
+        }
+    }
+
+    public interface IDepthChartService
+    {
+        void AddPlayerToDepthChart(string sport, string team, string position, int playerNumber,
+            string playerName,
+            long? positionDepth = null);
+
+        List<PlayerEntryModel> GetBackups(string sport, string team, string position, string playerName);
+        void RemovePlayerFromDepthChart(string sport, string team, string position, string playerName);
+
+        void GetFullDepthChart(string sport, string team);
     }
 }
