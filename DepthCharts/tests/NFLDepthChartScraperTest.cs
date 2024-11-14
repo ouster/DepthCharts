@@ -21,9 +21,9 @@ public class NflDepthChartScraperTest : IDisposable
         var depthChart = scraper.GetTeamDepthChart("TB", html);
         
         Assert.NotNull(depthChart);
-        Assert.NotNull(depthChart.ParsedDepthChartData);
-        Assert.NotEmpty(depthChart.ParsedDepthChartData);
-        Assert.Equal(37, depthChart.ParsedDepthChartData.Count);
+        Assert.NotNull(depthChart.TeamDepthChartGroupList);
+        Assert.NotEmpty(depthChart.TeamDepthChartGroupList);
+        Assert.Equal(37, depthChart.TeamDepthChartGroupList.Count);
     }
     
     [Fact]

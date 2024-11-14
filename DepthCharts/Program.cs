@@ -1,3 +1,4 @@
+using AutoMapper;
 using DepthCharts;
 using DepthCharts.Middleware;
 
@@ -34,6 +35,7 @@ builder.Services.AddScoped<DepthChartScraperService>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddAutoMapper(typeof(DefaultAutomapperProfile));
 
 var app = builder.Build();
 
@@ -46,12 +48,17 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
+    app.UseHttpsRedirection();
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
 
+using var scope = app.Services.CreateScope();
+var mapper = scope.ServiceProvider.GetRequiredService<IMapper>();
+mapper.ConfigurationProvider.AssertConfigurationIsValid();
+
 app.UseMiddleware<GlobalExceptionHandler>();
-app.UseHttpsRedirection();
+
 app.UseAuthorization();
 app.MapControllers();
 

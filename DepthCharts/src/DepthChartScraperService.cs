@@ -1,3 +1,5 @@
+using DepthCharts.Models;
+
 namespace DepthCharts;
 
 public class DepthChartScraperService 
@@ -29,7 +31,7 @@ public class DepthChartScraperService
         throw new ArgumentException($"No scraper found for team {sport}");
     }
 
-    public async Task<ParsedDepthChart> Scrape(string sport, string teamName)
+    public async Task<DepthChartModel> Scrape(string sport, string teamName)
     {
         var scraper = GetScraperForSport(sport);
         

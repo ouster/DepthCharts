@@ -1,38 +1,19 @@
+using DepthCharts.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DepthCharts;
 
 [ApiController]
 [Route("api/[controller]")]
-public class DepthChartController(DepthChartScraperService depthChartScraperService) : ControllerBase
+public class DepthChartController(DepthChartScraperService depthChartScraperService, DepthChartService depthChartService) : ControllerBase
 {
-    [HttpGet($"{{{nameof(sport)}}}/{{{nameof(team)}}}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [Produces("application/json")]
-    public async Task<IActionResult> GetTeamDepthChart(string sport, string team)
-    {
-        var depthChart = await depthChartScraperService.Scrape(sport, team);
-
-        return Ok(depthChart);
-    }
-    
-    [HttpGet($"{{{nameof(sport)}}}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [Produces("application/json")]
-    public async Task<IActionResult> GetTeamDepthChartCodes(string sport)
-    {
-        var teamCodes = await depthChartScraperService.ScrapeTeamCodes(sport);
-
-        return Ok(teamCodes);
-    }
-
-    [HttpPost("player")]
+    [HttpPost($"{{{nameof(sport)}}}/{{{nameof(team)}}}/player" + "/{positionDepth}")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public IActionResult AddPlayerToDepthChart([FromBody] PlayerDto player)
+    public IActionResult AddPlayerToDepthChart(string sport, string team, [FromBody] PlayerDto player, int? positionDepth)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        throw new NotImplementedException();
+        depthChartService.AddPlayerToDepthChart(sport, team, player.Position, player.Number, player.Name, positionDepth);
         return Created();
     }
 
@@ -59,41 +40,31 @@ public class DepthChartController(DepthChartScraperService depthChartScraperServ
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]
-    public ParsedDepthChart GetFullDepthChart()
+    public DepthChartModel GetFullDepthChart()
     {
         throw new NotImplementedException();
     }
+    
+    
+    // Helper endpoints to test scraping
+    [HttpGet($"{{{nameof(sport)}}}/{{{nameof(team)}}}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [Produces("application/json")]
+    public async Task<IActionResult> ScrapeTeamDepthChart(string sport, string team)
+    {
+        var depthChart = await depthChartScraperService.Scrape(sport, team);
+
+        return Ok(depthChart);
+    }
+    
+    [HttpGet($"{{{nameof(sport)}}}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [Produces("application/json")]
+    public async Task<IActionResult> ScrapeTeamDepthChartCodes(string sport)
+    {
+        var teamCodes = await depthChartScraperService.ScrapeTeamCodes(sport);
+
+        return Ok(teamCodes);
+    }
+
 }
-
-
-public record ParsedDepthChart()
-{
-    public string? Team { get; init; }
-    public List<PositionGroup>? ParsedDepthChartData { get; init; }
-}
-
-public record PositionGroup()
-{
-    public string? Section { get; init; }
-    public string? Position { get; init; }
-    public List<PlayerPosition>? PlayerPositions { get; init; }
-}
-
-public record PlayerPosition(string No, string PlayerName)
-{
-}
-
-//TODO move to models 
-
-public record PlayerDto()
-{
-    public string? Number { get; init; }
-    public string? Name { get; init; }
-    public string? Position { get; init; }
-}
-
-// public record DepthChart(string Team, List<PositionGroup> DepthChartData);
-//
-// public record PositionGroup(string Position, string Starter, List<string> Backups);
-//
-// public record PlayerDto(int Number, string Name, string Position);

@@ -1,5 +1,6 @@
 using HtmlAgilityPack;
 using System.Net.Http;
+using DepthCharts.Models;
 using Microsoft.Extensions.Options;
 
 
@@ -9,18 +10,18 @@ public class NflDepthChartScraper(NflDepthChartScraperHttpClientHelper nflDepthC
 {
     public string Sport { get; } = "NFL";
 
-    public async Task<ParsedDepthChart> GetTeamDepthChart(string teamName)
+    public async Task<DepthChartModel> GetTeamDepthChart(string teamName)
     {
         var html = await nflDepthChartScraperHttpClientHelper.GetTeamDepthChartHtml(teamName);
         return GetTeamDepthChart(teamName, html);
     }
 
-    public ParsedDepthChart GetTeamDepthChart(string teamName, string html)
+    public DepthChartModel GetTeamDepthChart(string teamName, string html)
     {
-        var depthChart = new ParsedDepthChart
+        var depthChart = new DepthChartModel
         {
             Team = teamName,
-            ParsedDepthChartData = []
+            TeamDepthChartGroupList = []
         };
 
         var document = RemoveNbsp(html);
@@ -33,7 +34,6 @@ public class NflDepthChartScraper(NflDepthChartScraperHttpClientHelper nflDepthC
 
         var rows = table.SelectNodes(".//tr");
 
-        var section = "na";
         foreach (var row in rows)
         {
             var columns = row.SelectNodes("td")?.Where(cell => !string.IsNullOrWhiteSpace(cell.InnerText.Trim()))
@@ -41,8 +41,8 @@ public class NflDepthChartScraper(NflDepthChartScraperHttpClientHelper nflDepthC
 
             if (columns == null)
                 continue;
-            if (columns.Count == 1)
-                section = columns[0].InnerText.Trim();
+            // if (columns.Count == 1)
+            //     section = columns[0].InnerText.Trim();
             if (columns.Count < 3) continue; 
 
             var position = columns[0].InnerText.Trim();
@@ -59,23 +59,18 @@ public class NflDepthChartScraper(NflDepthChartScraperHttpClientHelper nflDepthC
                 throw new DepthChartParseException(msg);
             }
 
-            var players = new List<PlayerPosition>();
+            var players = new List<PlayerEntryModel>();
             for (var i = 0; i < noPlayers.Count - 1; i += 2)
             {
-                var no = noPlayers[i];
+                var no = Convert.ToInt32(noPlayers[i]);
                 var name = noPlayers[i + 1];
-                players.Add(new PlayerPosition(no, name));
+                players.Add(new PlayerEntryModel(no, name));
             }
 
-            depthChart.ParsedDepthChartData.Add(new PositionGroup
-            {
-                Section = section,
-                Position = position,
-                PlayerPositions = players
-            });
+            depthChart.TeamDepthChartGroupList.Add(new PositionGroupModel(Position: position, players));
         }
 
-        if (depthChart.ParsedDepthChartData.Count != 0) return depthChart;
+        if (depthChart.TeamDepthChartGroupList.Count != 0) return depthChart;
 
         logger.LogWarning($"Depth chart for {teamName} is empty");
         return depthChart;
