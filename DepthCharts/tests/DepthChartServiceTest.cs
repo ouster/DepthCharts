@@ -1,21 +1,12 @@
 using AutoMapper;
 using DepthCharts.Models;
 using DotNet.Testcontainers.Containers;
-using Testcontainers.Redis;
 using Xunit;
 
 namespace DepthCharts.tests;
 
-public class DepthChartServiceTest : BaseServiceFixture, IDisposable
+public class DepthChartServiceTest(DepthChartService depthChartService) : BaseServiceFixture, IDisposable
 {
-    private readonly RedisContainer _redisContainer = new RedisBuilder()
-        .WithImage("redis:latest")
-        .WithExposedPort(RedisPort)
-        .WithReuse(true)
-        .Build();
-    private const int RedisPort = 6379;
-    private DepthChartService? _depthChartService;
-    
     private readonly List<(PlayerDto player, int depth)> _players =
     [
         (new PlayerDto(Name: "Tom Brady", Number: 12, Position: "QB"), 0),
@@ -26,45 +17,28 @@ public class DepthChartServiceTest : BaseServiceFixture, IDisposable
         (new PlayerDto(Name: "Scott Miller", Number: 10, Position: "WR"), 2)
     ];
 
-
-    private void InitializeSync()
-    {
-        // Start the Redis container
-        _redisContainer.StartAsync().Wait();
-        var mappedConnectionString = _redisContainer.GetConnectionString();
-        // var mappedPort = _redisContainer.GetMappedPublicPort(RedisPort);
-        Environment.SetEnvironmentVariable("REDIS_CONNECTION", mappedConnectionString+",SyncTimeout=60000");
-        _depthChartService = new DepthChartService(Mapper, "unittests");
-    }
-
-    
     [Fact]
     public void AddPlayerToDepthChart_ShouldAddPlayersAtCorrectPositions()
     {
         // Arrange
-        InitializeSync();
 
         // Act
         foreach (var (player, depth) in _players)
         {
-            _depthChartService?.AddPlayerToDepthChart("NFL", "TB", player.Position, player.Number, player.Name, depth);
+            depthChartService?.AddPlayerToDepthChart("NFL", "TB", player.Position, player.Number, player.Name, depth);
         }
 
         // Assert
-        var qbDepthChart = _depthChartService?.GetBackups("NFL", "TB", "QB", "Tom Brady");
-        Assert.Equal("Blaine Gabbert", qbDepthChart?[0].Name);
-        Assert.Equal("Kyle Trask", qbDepthChart?[1].Name);
+        var qbDepthChart = depthChartService?.GetBackups("NFL", "TB", "QB", "Tom Brady");
+        Assert.Equal("Blaine Gabbert", qbDepthChart?[0].PlayerName);
+        Assert.Equal("Kyle Trask", qbDepthChart?[1].PlayerName);
 
-        var wrDepthChart = _depthChartService?.GetBackups("NFL", "TB", "WR", "Jaelon Darden");
-        Assert.Equal("Scott Miller", wrDepthChart?[0].Name);
+        var wrDepthChart = depthChartService?.GetBackups("NFL", "TB", "WR", "Jaelon Darden");
+        Assert.Equal("Scott Miller", wrDepthChart?[0].PlayerName);
     }
 
-    public async void Dispose()
+    public void Dispose()
     {
-        if (_redisContainer.State == TestcontainersStates.Running)
-        {
-            await _redisContainer.StopAsync();
-        }
     }
 }
 

@@ -1,130 +1,92 @@
-using System.Text.Json;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using AutoMapper;
-using StackExchange.Redis;
 using DepthCharts.Models;
 
-namespace DepthCharts;
-
-public class DepthChartService
+namespace DepthCharts
 {
-    private readonly IMapper _mapper;
-    private readonly IDatabase _redisDb;
-    private readonly string _redisKeyPrefix;
-    private readonly ConnectionMultiplexer _redis;
-
-    public DepthChartService(IMapper mapper, string redisKeyPrefix)
+    public class DepthChartService
     {
-        ArgumentNullException.ThrowIfNull(redisKeyPrefix);
-        _redisKeyPrefix = redisKeyPrefix;
+        private readonly Dictionary<string, Dictionary<string, Dictionary<string, SortedList<long, PlayerEntryModel>>>>
+            _depthCharts = new();
 
-        _mapper = mapper;
-        var redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION");
-
-        var options = ConfigurationOptions.Parse(redisConnectionString ?? throw new InvalidOperationException());
-        _redis = ConnectionMultiplexer.Connect(options);
-
-        if (!_redis.IsConnected)
-            throw new RedisException($"Unable to connect to the server {redisConnectionString}");
-
-        _redisDb = _redis.GetDatabase();
-    }
-
-    public void AddPlayerToDepthChart(string sport, string team, string playerPosition, int playerNumber,
-        string playerName, long? passedPositionDepth = null)
-    {
-        var sortedSetKey = $"{_redisKeyPrefix}-depthchart:{sport}:{team}:{playerPosition}";
-        var hashKey = $"{_redisKeyPrefix}-depthchart:{sport}:{team}:{playerPosition}:players";
-
-        var positionDepth = passedPositionDepth ?? _redisDb.SortedSetLength(sortedSetKey) + 1;
-
-        // Shift players down if necessary
-        var playersToShift = _redisDb.SortedSetRangeByScore(sortedSetKey, positionDepth);
-        foreach (var p in playersToShift)
+        public void AddPlayerToDepthChart(string sport, string team, string position, int playerNumber,
+            string playerName,
+            long? positionDepth = null)
         {
-            var currentDepth = _redisDb.SortedSetScore(sortedSetKey, p);
-            if (currentDepth != null) _redisDb.SortedSetAdd(sortedSetKey, p, currentDepth.Value + 1);
-        }
+            if (!_depthCharts.ContainsKey(sport))
+                _depthCharts[sport] = new Dictionary<string, Dictionary<string, SortedList<long, PlayerEntryModel>>>();
 
-        var entry = new PlayerEntryModel(playerNumber, playerName);
-        _redisDb.SortedSetAdd(sortedSetKey, JsonSerializer.Serialize(entry), positionDepth);
+            if (!_depthCharts[sport].ContainsKey(team))
+                _depthCharts[sport][team] = new Dictionary<string, SortedList<long, PlayerEntryModel>>();
 
-        // Add to hash for direct player lookup
-        _redisDb.HashSet(hashKey, playerName, positionDepth);
-    }
+            if (!_depthCharts[sport][team].ContainsKey(position))
+                _depthCharts[sport][team][position] = new SortedList<long, PlayerEntryModel>();
 
-    public List<PlayerEntryModel> GetBackups(string sport, string team, string position, string playerName)
-    {
-        var sortedSetKey = $"{_redisKeyPrefix}-depthchart:{sport}:{team}:{position}";
-        var hashKey = $"{_redisKeyPrefix}-depthchart:{sport}:{team}:{position}:players";
+            var depthChart = _depthCharts[sport][team][position];
+            positionDepth ??= depthChart.Count + 1;
 
-        var starterPlayerDepth = _redisDb.HashGet(hashKey, playerName);
-        if (starterPlayerDepth.IsNull)
-            return [];
-
-        var backups = _redisDb.SortedSetRangeByScore(sortedSetKey, starterPlayerDepth+1, Double.PositiveInfinity);
-        return backups
-            .Where(p => !p.IsNullOrEmpty)
-            .Select(p => JsonSerializer.Deserialize<PlayerEntryModel>(p!))
-            .OfType<PlayerEntryModel>()
-            .ToList();
-    }
-
-    public void RemovePlayerFromDepthChart(string sport, string team, string position, string playerName)
-    {
-        var sortedSetKey = $"{_redisKeyPrefix}-depthchart:{sport}:{team}:{position}";
-        var hashKey = $"{_redisKeyPrefix}-depthchart:{sport}:{team}:{position}:players";
-
-        var playerDepth = _redisDb.HashGet(hashKey, playerName);
-        if (playerDepth.IsNull)
-            return;
-
-        _redisDb.SortedSetRemove(sortedSetKey, playerName);
-        _redisDb.HashDelete(hashKey, playerName);
-
-        // Shift players up after removal
-        var playersToShift = _redisDb.SortedSetRangeByScore(sortedSetKey, (double)playerDepth);
-        foreach (var p in playersToShift)
-        {
-            var currentDepth = _redisDb.SortedSetScore(sortedSetKey, p);
-            if (currentDepth != null) _redisDb.SortedSetAdd(sortedSetKey, p, currentDepth.Value - 1);
-        }
-    }
-    //
-    // public ParsedDepthChartModel GetFullTeamDepthChart(string sport, string team)
-    // {
-    //     var key = $"{_redisKeyPrefix}-depthchart:{sport}:{team}";
-    //     var chart = new ParsedDepthChartModel { Team = team, ParsedTeamDepthChartGroupList = new List<ParsedPositionGroupModel>() };
-    //     var positions = _redisDb.HashGetAll(key);
-    //
-    //     foreach (var position in positions)
-    //     {
-    //         var posKey = position.Name.ToString();
-    //         var players = _redisDb.SortedSetRangeByScoreWithScores(posKey);
-    //
-    //         var positionGroup = new ParsedPositionGroupModel
-    //         {
-    //             Position = posKey,
-    //             PositionsDepthList =
-    //                 players.Select(p => new PlayerDto { Name = p.Element, PlayerPosition = p.Score }).ToList()
-    //         };
-    //         chart.ParsedTeamDepthChartGroupList.Add(positionGroup);
-    //     }
-    //
-    //     return chart;
-    // }
-
-    public PositionGroupModel GetPartialDepthChart(string sport, string team, string playerPosition)
-    {
-        var posKey = $"{_redisKeyPrefix}-depthchart:{sport}:{team}:{playerPosition}";
-        var players = _redisDb.SortedSetRangeByScoreWithScores(posKey);
-        var playerEntries = players.Select(p =>
+            // Shift players down if necessary
+            if (depthChart.ContainsKey(positionDepth.Value))
             {
-                var entry = JsonSerializer.Deserialize<PlayerEntryModel>(p.Element.ToString());
-                return entry ?? throw new NullReferenceException();
-            })
-            .ToList();
-        var positionGroup = new PositionGroupModel(playerPosition, playerEntries);
-        
-        return positionGroup;
+                foreach (var player in depthChart.Where(p => p.Key >= positionDepth.Value).OrderByDescending(p => p.Key)
+                             .ToList())
+                {
+                    depthChart[player.Key + 1] = player.Value; // Shift player down
+                    depthChart.Remove(player.Key);
+                }
+            }
+
+            // Add the player at the specified depth
+            var newPlayer = new PlayerEntryModel(playerNumber, playerName, positionDepth.Value);
+            depthChart.Add(positionDepth.Value, newPlayer);
+        }
+
+        public List<PlayerEntryModel> GetBackups(string sport, string team, string position, string playerName)
+        {
+            if (!_depthCharts.ContainsKey(sport) || !_depthCharts[sport].ContainsKey(team) ||
+                !_depthCharts[sport][team].ContainsKey(position))
+            {
+                return [];
+            }
+
+            var depthChart = _depthCharts[sport][team][position];
+            var player = depthChart.Values.FirstOrDefault(p => p.PlayerName == playerName);
+
+            if (player == null)
+            {
+                return [];
+            }
+
+            return depthChart.Values.Where(p => p.PositionDepth > player.PositionDepth).ToList();
+        }
+
+        public void RemovePlayerFromDepthChart(string sport, string team, string position, string playerName)
+        {
+            if (!_depthCharts.ContainsKey(sport) || !_depthCharts[sport].ContainsKey(team) ||
+                !_depthCharts[sport][team].ContainsKey(position))
+            {
+                return;
+            }
+
+            var depthChart = _depthCharts[sport][team][position];
+            var player = depthChart.Values.FirstOrDefault(p => p.PlayerName == playerName);
+
+            if (player != null)
+            {
+                depthChart.Remove(player.PositionDepth);
+
+                // Shift players up if necessary
+                var playersToShift = depthChart.Where(p => p.Key > player.PositionDepth).ToList();
+                foreach (var playerToShift in playersToShift)
+                {
+                    var updatedPlayer = playerToShift.Value;
+                    updatedPlayer.PositionDepth--;
+                    depthChart.Remove(playerToShift.Key);
+                    depthChart.Add(updatedPlayer.PositionDepth, updatedPlayer);
+                }
+            }
+        }
     }
 }
