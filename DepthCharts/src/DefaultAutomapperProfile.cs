@@ -7,7 +7,12 @@ public class DefaultAutomapperProfile : Profile
 {
     public DefaultAutomapperProfile()
     {
-        // Create a map between matching types without specifying properties explicitly
-        CreateMap<PlayerEntryModel, PlayerDto>();
+        CreateMap<PlayerEntryModel, PlayerDto>()
+            .ConstructUsing(src =>
+                new PlayerDto(src.PlayerNumber, src.PlayerName, ""));
+        
+        CreateMap<PlayerDto, PlayerEntryModel>()
+            .ConstructUsing(src =>
+                new PlayerEntryModel(src.Number, src.Name));
     }
 }

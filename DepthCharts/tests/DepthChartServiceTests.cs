@@ -114,6 +114,15 @@ public class DepthChartServiceTests : IDisposable
         Assert.Equal([], removedPlayer);
     }
 
+    [Fact]
+    public void VerifyDeptChartIsGood()
+    {
+        // Arrange
+        AddTestPlayers();
+        var depthChart = _depthChartService.GetFullDepthChart("NFL", "TB");
+        
+    }
+
     private void AssertPlayerBackups(string position, string playerName,
         (string playerName, int playerNumber)[] expectedBackups)
     {

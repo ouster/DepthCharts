@@ -8,6 +8,10 @@ namespace DepthCharts
 {
     public class DepthChartService : IDepthChartService
     {
+        public DepthChartService()
+        {
+            
+        }
         private readonly Dictionary<string, Dictionary<string, Dictionary<string, SortedList<long, PlayerEntryModel>>>>
             _depthCharts = new();
 
@@ -31,7 +35,7 @@ namespace DepthCharts
             if (depthChart.ContainsKey(positionDepth.Value))
             {
                 var playerEntry = depthChart[positionDepth.Value];
-                
+
                 // matching player name and number
                 if (playerEntry.PlayerName == playerName && playerEntry.PlayerNumber == playerNumber)
                     return;
@@ -53,7 +57,7 @@ namespace DepthCharts
             depthChart.Add(positionDepth.Value, newPlayer);
         }
 
-        public List<PlayerEntryModel> GetBackups(string sport, string team, string position, string playerName)
+        public List<BackupPlayersDto> GetBackups(string sport, string team, string position, string playerName)
         {
             if (!_depthCharts.ContainsKey(sport) || !_depthCharts[sport].ContainsKey(team) ||
                 !_depthCharts[sport][team].ContainsKey(position))
@@ -64,7 +68,12 @@ namespace DepthCharts
             var depthChart = _depthCharts[sport][team][position];
             var playerKeyValuePair = depthChart.FirstOrDefault(p => p.Value.PlayerName == playerName);
 
-            return depthChart.Where(p => p.Key > playerKeyValuePair.Key).Select(p => p.Value).ToList();
+            return depthChart
+                .Where(p =>
+                    p.Key > playerKeyValuePair.Key)
+                .Select(p =>
+                    new BackupPlayersDto(p.Value.PlayerNumber, p.Value.PlayerName)
+                ).ToList();
         }
 
         public List<PlayerEntryModel> RemovePlayerFromDepthChart(string sport, string team, string position,
@@ -99,23 +108,61 @@ namespace DepthCharts
             return [];
         }
 
-        public void GetFullDepthChart(string sport, string team)
+        public FullDepthChartDto GetFullDepthChart(string sport, string team)
         {
-            throw new NotImplementedException();
+            if (!_depthCharts.ContainsKey(sport) || !_depthCharts[sport].ContainsKey(team))
+            {
+                return new FullDepthChartDto(sport, []);
+            }
+
+            var depthChart = _depthCharts[sport][team];
+            var teamDepthChart = new FullDepthChartDto(
+                sport,
+                [
+                    new TeamDepthChartDto(
+                        team,
+                        depthChart.Select(position => new PositionDepthChartDto(
+                            position.Key,
+                            position.Value.Values.ToList()
+                        )).ToList()
+                    )
+                ]
+            );
+
+            return teamDepthChart;
         }
+
     }
 
+    public record BackupPlayersDto(int PlayerNumber, string PlayerName);
+
+    public record FullDepthChartDto(
+        string Sport,
+        List<TeamDepthChartDto> Teams
+    );
+
+    public record TeamDepthChartDto(
+        string TeamName,
+        List<PositionDepthChartDto> Positions
+    );
+
+    public record PositionDepthChartDto(
+        string Position,
+        List<PlayerEntryModel> Players
+    );
+    
     public interface IDepthChartService
     {
         void AddPlayerToDepthChart(string sport, string team, string position, int playerNumber,
             string playerName,
             long? positionDepth = null);
 
-        List<PlayerEntryModel> GetBackups(string sport, string team, string position, string playerName);
+        List<BackupPlayersDto> GetBackups(string sport, string team, string position, string playerName);
 
         List<PlayerEntryModel>
             RemovePlayerFromDepthChart(string sport, string team, string position, string playerName);
 
-        void GetFullDepthChart(string sport, string team);
+        FullDepthChartDto GetFullDepthChart(
+            string sport, string team);
     }
 }

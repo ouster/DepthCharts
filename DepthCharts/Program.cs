@@ -17,7 +17,7 @@ builder.Configuration
 
 builder.Services.AddLogging();
 
-// builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 
 
@@ -29,13 +29,13 @@ builder.Services.AddSingleton<DepthChartsUrlsSettings>();
 
 builder.Services.AddScoped<IDepthChartScraper, NflDepthChartScraper>();
 builder.Services.AddScoped<DepthChartScraperService>();
+builder.Services.AddScoped<DepthChartService>();
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddAutoMapper(typeof(DefaultAutomapperProfile));
 
 var app = builder.Build();
 
@@ -54,8 +54,8 @@ else
 }
 
 using var scope = app.Services.CreateScope();
-var mapper = scope.ServiceProvider.GetRequiredService<IMapper>();
-mapper.ConfigurationProvider.AssertConfigurationIsValid();
+// var mapper = scope.ServiceProvider.GetRequiredService<IMapper>();
+// mapper.ConfigurationProvider.AssertConfigurationIsValid();
 
 app.UseMiddleware<GlobalExceptionHandler>();
 

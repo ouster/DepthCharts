@@ -10,6 +10,10 @@ public class GlobalExceptionHandler(RequestDelegate next, ILogger<GlobalExceptio
         {
             await next(context); // Call the next middleware in the pipeline
         }
+        catch (KeyNotFoundException ex)
+        {
+            await HandleExceptionAsync(context, ex);
+        }
         catch (Exception ex)
         {
             await HandleExceptionAsync(context, ex);
