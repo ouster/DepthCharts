@@ -33,13 +33,24 @@
     &lt;/TestAncestor&gt;
   &lt;/Or&gt;
 &lt;/SessionState&gt;</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=82533643_002D6cbc_002D4efd_002D99fa_002D319194a1ad83/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="AddPlayerToDepthChartTest" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=49dad984_002D9263_002D4893_002D8bed_002Dd8ab84036fbc/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="AddPlayerToDepthChart_ShouldAllowAddSamePlayerToTheDepthChart" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+  &lt;TestAncestor&gt;
+    &lt;TestId&gt;xUnit::5D449D7C-96B9-4BB0-8D3E-257F02246A51::net8.0::DepthCharts.tests.DepthChartServiceTests&lt;/TestId&gt;
+  &lt;/TestAncestor&gt;
+&lt;/SessionState&gt;</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=82533643_002D6cbc_002D4efd_002D99fa_002D319194a1ad83/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="AddPlayerToDepthChartTest" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
   &lt;Or&gt;
     &lt;ProjectFile&gt;5D449D7C-96B9-4BB0-8D3E-257F02246A51/d:tests/f:DepthChartServiceTest.cs&lt;/ProjectFile&gt;
     &lt;TestAncestor&gt;
       &lt;TestId&gt;xUnit::5D449D7C-96B9-4BB0-8D3E-257F02246A51::net8.0::DepthCharts.tests.NflDepthChartScraperTest.TestOurLadsDepthChartTampaBayScraper&lt;/TestId&gt;
       &lt;TestId&gt;xUnit::5D449D7C-96B9-4BB0-8D3E-257F02246A51::net8.0::DepthCharts.tests.DepthChartServiceTests.AddPlayerToDepthChart_ShouldAddPlayersAtCorrectPositions1&lt;/TestId&gt;
       &lt;TestId&gt;xUnit::5D449D7C-96B9-4BB0-8D3E-257F02246A51::net8.0::DepthCharts.tests.DepthChartServiceTests.AddPlayerToDepthChart_ShouldAddPlayersAtCorrectPositions&lt;/TestId&gt;
+      &lt;TestId&gt;xUnit::5D449D7C-96B9-4BB0-8D3E-257F02246A51::net8.0::DepthCharts.tests.DepthChartServiceTests.AddPlayerToDepthChart_ShouldAllowAddSamePlayerToTheDepthChart&lt;/TestId&gt;
     &lt;/TestAncestor&gt;
   &lt;/Or&gt;
+&lt;/SessionState&gt;</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=c8e2fce2_002D8285_002D43a4_002Db234_002Dc4d66451b644/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="DepthChartServiceTests" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+  &lt;TestAncestor&gt;
+    &lt;TestId&gt;xUnit::5D449D7C-96B9-4BB0-8D3E-257F02246A51::net8.0::DepthCharts.tests.DepthChartServiceTests&lt;/TestId&gt;
+  &lt;/TestAncestor&gt;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>

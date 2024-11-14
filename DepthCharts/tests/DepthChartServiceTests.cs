@@ -5,87 +5,84 @@ using Xunit;
 
 namespace DepthCharts.tests;
 
-public class DepthChartServiceTests : BaseServiceFixture, IDisposable
+public class DepthChartServiceTests : IDisposable
 {
-    private readonly List<(PlayerDto player, int depth)> _players =
-    [
-        (new PlayerDto(Name: "Tom Brady", Number: 12, Position: "QB"), 0),
-        (new PlayerDto(Name: "Blaine Gabbert", Number: 11, Position: "QB"), 1),
-        (new PlayerDto(Name: "Kyle Trask", Number: 2, Position: "QB"), 2),
-        (new PlayerDto(Name: "Mike Evans", Number: 13, Position: "WR"), 0),
-        (new PlayerDto(Name: "Jaelon Darden", Number: 1, Position: "WR"), 1),
-        (new PlayerDto(Name: "Scott Miller", Number: 10, Position: "WR"), 2)
-    ];
+    private List<(PlayerDto player, int depth)> _players;
 
     private readonly DepthChartService _depthChartService;
-    
+
     public DepthChartServiceTests()
     {
         _depthChartService = new DepthChartService();
     }
 
+    private List<(PlayerDto, int)> GetTestPlayers() =>
+    [
+        (new PlayerDto(12, "Tom Brady", "QB"), 0),
+        (new PlayerDto(11, "Blaine Gabbert", "QB"), 1),
+        (new PlayerDto(2, "Kyle Trask", "QB"), 2),
+        (new PlayerDto(13, "Mike Evans", "WR"), 0),
+        (new PlayerDto(1, "Jaelon Darden", "WR"), 1),
+        (new PlayerDto(10, "Scott Miller", "WR"), 2)
+    ];
+
     [Fact]
-    public void AddPlayerToDepthChart_ShouldAddPlayersAtCorrectPositions()
+    public void AddPlayerToDepthChart_ShouldAddPlayersAtCorrectPositionsAndReturnExpectedBackups()
     {
         // Arrange
-    
-        // Act
+        AddTestPlayers();
+
+        // Assert
+        AssertPlayerBackups("QB", "Tom Brady", new[] { ("Blaine Gabbert", 11), ("Kyle Trask", 2) });
+        AssertPlayerBackups("WR", "Jaelon Darden", new[] { ("Scott Miller", 10) });
+        AssertPlayerBackups("WR", "Mike Evans", new[] { ("Jaelon Darden", 1), ("Scott Miller", 10) });
+        AssertPlayerBackups("QB", "Kyle Trask", Array.Empty<(string, int)>());
+    }
+
+    private void AddTestPlayers()
+    {
+        _players = GetTestPlayers();
         foreach (var (player, depth) in _players)
         {
-            _depthChartService?.AddPlayerToDepthChart("NFL", "TB", player.Position, player.Number, player.Name, depth);
+            _depthChartService.AddPlayerToDepthChart("NFL", "TB", player.Position, player.Number, player.Name, depth);
         }
-    
+    }
+
+    [Fact] public void AddPlayerToDepthChart_ShouldAllowAddSamePlayerToTheDepthChartSameDepth()
+    {
+        // Arrange
+        AddTestPlayers();
+        
+        // Act
+        _depthChartService.AddPlayerToDepthChart("NFL", "TB", "QB", 12,"Tom Brady", 0);
+
         // Assert
-        var qbDepthChart = _depthChartService?.GetBackups("NFL", "TB", "QB", "Tom Brady");
-        Assert.Equal("Blaine Gabbert", qbDepthChart?[0].PlayerName);
-        Assert.Equal(11, qbDepthChart?[0].PlayerNumber);
-        Assert.Equal("Kyle Trask", qbDepthChart?[1].PlayerName);
-        Assert.Equal(2, qbDepthChart?[1].PlayerNumber);
-    
-        var wrDepthChart = _depthChartService?.GetBackups("NFL", "TB", "WR", "Jaelon Darden");
-        Assert.Equal("Scott Miller", wrDepthChart?[0].PlayerName);
-        Assert.Equal(10, wrDepthChart?[0].PlayerNumber);
-        
-        qbDepthChart = _depthChartService?.GetBackups("NFL", "TB", "QB", "Mike Evans");
-        Assert.Empty(qbDepthChart);
-        
-        qbDepthChart = _depthChartService?.GetBackups("NFL", "TB", "QB", "Kyle Trask");
-        Assert.Empty(qbDepthChart);
-        
+        AssertPlayerBackups("QB", "Tom Brady", new[] { ("Blaine Gabbert", 11), ("Kyle Trask", 2) });
     }
     
-
-
-    public void Dispose()
+    [Fact] public void AddPlayerToDepthChart_ShouldAllowAddSamePlayerToTheDepthChartDeeperDepth()
     {
+        // Arrange
+        AddTestPlayers();
+        
+        // Act
+        _depthChartService.AddPlayerToDepthChart("NFL", "TB", "QB", 12,"Tom Brady", 3);
+
+        // Assert
+        AssertPlayerBackups("QB", "Tom Brady", [] );
     }
+
+    private void AssertPlayerBackups(string position, string playerName, (string playerName, int playerNumber)[] expectedBackups)
+    {
+        var backups = _depthChartService.GetBackups("NFL", "TB", position, playerName);
+        Assert.Equal(expectedBackups.Length, backups.Count);
+
+        for (var i = 0; i < expectedBackups.Length; i++)
+        {
+            Assert.Equal(expectedBackups[i].playerName, backups[i].PlayerName);
+            Assert.Equal(expectedBackups[i].playerNumber, backups[i].PlayerNumber);
+        }
+    }
+
+    public void Dispose() { }
 }
-
-public abstract class AutoMapperFixture : IDisposable
-{
-    public static IMapper MapperFactory()
-    {
-        // Set up a service provider with AutoMapper for testing
-        var serviceCollection = new ServiceCollection();
-        serviceCollection.AddAutoMapper(typeof(Program)); // Register AutoMapper with all profiles  
-
-        var serviceProvider = serviceCollection.BuildServiceProvider();
-        var mapper = serviceProvider.GetRequiredService<IMapper>();
-        return mapper;
-    }
-
-    public void Dispose()
-    {
-    }
-}
-
-public class BaseServiceFixture
-{
-    protected readonly IMapper Mapper;
-
-    protected BaseServiceFixture()
-    {
-        Mapper = AutoMapperFixture.MapperFactory();
-    }
-}
-

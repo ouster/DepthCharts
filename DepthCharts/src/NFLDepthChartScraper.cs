@@ -64,7 +64,7 @@ public class NflDepthChartScraper(NflDepthChartScraperHttpClientHelper nflDepthC
             {
                 var no = Convert.ToInt32(noPlayers[i]);
                 var name = noPlayers[i + 1];
-                players.Add(new PlayerEntryModel(no, name, i));
+                players.Add(new PlayerEntryModel(no, name));
             }
 
             depthChart.TeamDepthChartGroupList.Add(new PositionGroupModel(Position: position, players));
