@@ -41,29 +41,36 @@ public class NflDepthChartScraper(NflDepthChartScraperHttpClientHelper nflDepthC
 
             if (columns == null)
                 continue;
-            // if (columns.Count == 1)
-            //     section = columns[0].InnerText.Trim();
+
             if (columns.Count < 3) continue; 
 
             var position = columns[0].InnerText.Trim();
 
             var noPlayers = columns.Skip(1)
                 .Select(col => col.InnerText.Trim())
-                .Where(player => !string.IsNullOrEmpty(player))
                 .ToList();
 
             if (noPlayers.Count % 2 != 0)
             {
-                var msg = $"noPlayers List {noPlayers} for {teamName} is not an even number of pos/name pairs.";
-                logger.LogError(msg);
-                throw new DepthChartParseException(msg);
+                noPlayers = RepairData(noPlayers);
+                var msg = $"noPlayers List {noPlayers} for {teamName} was adjusted to an even number of pos/name pairs.";
+                logger.LogWarning(msg);
             }
 
             var players = new List<PlayerEntryModel>();
             for (var i = 0; i < noPlayers.Count - 1; i += 2)
             {
-                var no = Convert.ToInt32(noPlayers[i]);
-                var name = noPlayers[i + 1];
+                var no = 0;
+                if (string.IsNullOrEmpty(noPlayers[i]))
+                {
+                    logger.LogWarning($"blank cell in player list {noPlayers[i]} for {teamName}");
+                }
+                else
+                {
+                    no = Convert.ToInt32(noPlayers[i].Trim());
+                }
+
+                var name = noPlayers[i + 1].Trim();
                 players.Add(new PlayerEntryModel(no, name));
             }
 
@@ -74,6 +81,26 @@ public class NflDepthChartScraper(NflDepthChartScraperHttpClientHelper nflDepthC
 
         logger.LogWarning($"Depth chart for {teamName} is empty");
         return depthChart;
+    }
+    
+    static List<string> RepairData(List<string> originalList)
+    {
+        var newList = new List<string>();
+
+        foreach (var entry in originalList)
+        {
+            if (entry is int || entry is float)  // Check if entry is a number
+            {
+                newList.Add(entry);
+            }
+            else if (entry is string)  // Check if entry is a name
+            {
+                newList.Add("0");  // Add 0 before the name
+                newList.Add(entry);
+            }
+        }
+
+        return newList;
     }
 
     public async Task<SortedSet<string>> GetTeamDepthChartCodes()
