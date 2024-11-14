@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using AutoMapper;
@@ -6,103 +7,147 @@ using DepthCharts.Models;
 
 namespace DepthCharts
 {
+    /**
+     * This is a example implementation keeping the charts in memory
+     * Even if you scrape all of ourlads it's not alot of data to keep in memory
+     * for production, would probably look at a DB or redis with either json serialisation or Redis.OM
+     * as you would want to add more sports
+     *
+     * This would remove the need to make this thread safe as well
+     */
     public class DepthChartService : IDepthChartService
     {
         public DepthChartService()
         {
-            
         }
-        private readonly Dictionary<string, Dictionary<string, Dictionary<string, SortedList<long, PlayerEntryModel>>>>
+
+        private readonly ConcurrentDictionary<string, ConcurrentDictionary<string,
+                ConcurrentDictionary<string, SortedDictionary<long, PlayerEntryModel>>>>
             _depthCharts = new();
+
+        private readonly ReaderWriterLockSlim _lock = new();
 
         public void AddPlayerToDepthChart(string sport, string team, string position, int playerNumber,
             string playerName,
             long? positionDepth = null)
         {
-            if (!_depthCharts.ContainsKey(sport))
-                _depthCharts[sport] = new Dictionary<string, Dictionary<string, SortedList<long, PlayerEntryModel>>>();
+            var depthChart = GetOrAddDepthChart();
 
-            if (!_depthCharts[sport].ContainsKey(team))
-                _depthCharts[sport][team] = new Dictionary<string, SortedList<long, PlayerEntryModel>>();
-
-            if (!_depthCharts[sport][team].ContainsKey(position))
-                _depthCharts[sport][team][position] = new SortedList<long, PlayerEntryModel>();
-
-            var depthChart = _depthCharts[sport][team][position];
             positionDepth ??= depthChart.Count + 1;
 
-            // matching depth
-            if (depthChart.ContainsKey(positionDepth.Value))
+
+            // Check if the player is already at the specified depth with matching details
+            if (depthChart.TryGetValue(positionDepth.Value, out var existingPlayer) &&
+                existingPlayer.PlayerNumber == playerNumber && existingPlayer.PlayerName == playerName)
             {
-                var playerEntry = depthChart[positionDepth.Value];
+                // Player already exists at this depth, so skip adding
+                return;
+            }
 
-                // matching player name and number
-                if (playerEntry.PlayerName == playerName && playerEntry.PlayerNumber == playerNumber)
-                    return;
+            RemovePlayerFromDepthChart(sport, team, position, playerName);
 
-                foreach (var player in depthChart.Where(p => p.Key >= positionDepth.Value).OrderByDescending(p => p.Key)
-                             .ToList())
+            _lock.EnterWriteLock();
+            try
+            {
+                // Shift players down to make room for the new entry
+                for (long i = depthChart.Count; i >= positionDepth.Value; i--)
                 {
-                    depthChart[player.Key + 1] = player.Value; // Shift player down
-                    depthChart.Remove(player.Key);
+                    if (!depthChart.TryGetValue(i, out var playerToShift)) continue;
+                    depthChart[i + 1] = playerToShift;
+                    depthChart.Remove(i);
                 }
+
+                // Add the new player at the specified depth
+                depthChart[positionDepth.Value] = new PlayerEntryModel(playerNumber, playerName);
             }
-            else // remove player if already present
+            finally
             {
-                RemovePlayerFromDepthChart(sport, team, position, playerName);
+                _lock.ExitWriteLock();
             }
 
-            // Add the player at the specified depth
-            var newPlayer = new PlayerEntryModel(playerNumber, playerName);
-            depthChart.Add(positionDepth.Value, newPlayer);
+            return;
+
+            SortedDictionary<long, PlayerEntryModel> GetOrAddDepthChart()
+            {
+                var depthChart = _depthCharts.GetOrAdd(sport,
+                        _ => new ConcurrentDictionary<string,
+                            ConcurrentDictionary<string, SortedDictionary<long, PlayerEntryModel>>>())
+                    .GetOrAdd(team, _ => new ConcurrentDictionary<string, SortedDictionary<long, PlayerEntryModel>>())
+                    .GetOrAdd(position, _ => new SortedDictionary<long, PlayerEntryModel>());
+                return depthChart;
+            }
         }
 
         public List<BackupPlayersDto> GetBackups(string sport, string team, string position, string playerName)
         {
-            if (!_depthCharts.ContainsKey(sport) || !_depthCharts[sport].ContainsKey(team) ||
-                !_depthCharts[sport][team].ContainsKey(position))
+            if (!TryGetDepthChart(sport, team, position, out var depthChart))
             {
                 return [];
             }
 
-            var depthChart = _depthCharts[sport][team][position];
-            var playerKeyValuePair = depthChart.FirstOrDefault(p => p.Value.PlayerName == playerName);
 
-            return depthChart
-                .Where(p =>
-                    p.Key > playerKeyValuePair.Key)
-                .Select(p =>
-                    new BackupPlayersDto(p.Value.PlayerNumber, p.Value.PlayerName)
-                ).ToList();
+            var playerEntry = depthChart.FirstOrDefault(p => p.Value.PlayerName == playerName);
+            if (playerEntry.Value == null)
+            {
+                return [];
+            }
+
+            _lock.EnterReadLock();
+            try
+            {
+                return depthChart
+                    .Where(p => p.Key > playerEntry.Key)
+                    .Select(p => new BackupPlayersDto(p.Value.PlayerNumber, p.Value.PlayerName))
+                    .ToList();
+            }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
+        }
+
+        private bool TryGetDepthChart(string sport, string team, string position,
+            out SortedDictionary<long, PlayerEntryModel> depthChart)
+        {
+            depthChart = [];
+            return _depthCharts.TryGetValue(sport, out var sportTeams) &&
+                   sportTeams.TryGetValue(team, out var teamPositions) &&
+                   teamPositions.TryGetValue(position, out depthChart);
         }
 
         public List<PlayerEntryModel> RemovePlayerFromDepthChart(string sport, string team, string position,
             string playerName)
         {
-            if (!_depthCharts.ContainsKey(sport) || !_depthCharts[sport].ContainsKey(team) ||
-                !_depthCharts[sport][team].ContainsKey(position))
+            if (!TryGetDepthChart(sport, team, position, out var depthChart))
             {
                 return [];
             }
 
-            var depthChart = _depthCharts[sport][team][position];
-
-            if (depthChart.Values.Any(p => p.PlayerName == playerName)) // TODO playerNumber would be better to match on
+            _lock.EnterWriteLock();
+            try
             {
-                var player = depthChart.FirstOrDefault(p => p.Value.PlayerName == playerName);
-
-                depthChart.Remove(player.Key);
-
-                // Shift players up if necessary
-                var playersToShift = depthChart.Where(p => p.Key > player.Key).ToList();
-                foreach (var (key, updatedPlayer) in playersToShift)
+                if (depthChart.Values.Any(p =>
+                        p.PlayerName == playerName)) // TODO playerNumber would be better to match on?
                 {
-                    var updatedKey = key - 1;
-                    depthChart.Remove(key);
-                    depthChart.Add(updatedKey, updatedPlayer);
-                }
+                    var player = depthChart.FirstOrDefault(p => p.Value.PlayerName == playerName);
 
-                return [player.Value];
+                    depthChart.Remove(player.Key);
+
+                    // Shift players up if necessary
+                    var playersToShift = depthChart.Where(p => p.Key > player.Key).ToList();
+                    foreach (var (key, updatedPlayer) in playersToShift)
+                    {
+                        var updatedKey = key - 1;
+                        depthChart.Remove(key);
+                        depthChart.Add(updatedKey, updatedPlayer);
+                    }
+
+                    return [player.Value];
+                }
+            }
+            finally
+            {
+                _lock.ExitWriteLock();
             }
 
             return [];
@@ -110,28 +155,34 @@ namespace DepthCharts
 
         public FullDepthChartDto GetFullDepthChart(string sport, string team)
         {
-            if (!_depthCharts.ContainsKey(sport) || !_depthCharts[sport].ContainsKey(team))
+            _lock.EnterReadLock();
+            try
             {
-                return new FullDepthChartDto(sport, []);
+                if (!_depthCharts.ContainsKey(sport) || !_depthCharts[sport].ContainsKey(team))
+                {
+                    return new FullDepthChartDto(sport, []);
+                }
+
+                var depthChart = _depthCharts[sport][team];
+                var teamDepthChart = new FullDepthChartDto(
+                    sport,
+                    [
+                        new TeamDepthChartDto(
+                            team,
+                            depthChart.Select(position => new PositionDepthChartDto(
+                                position.Key,
+                                position.Value.Values.ToList()
+                            )).ToList()
+                        )
+                    ]
+                );
+                return teamDepthChart;
             }
-
-            var depthChart = _depthCharts[sport][team];
-            var teamDepthChart = new FullDepthChartDto(
-                sport,
-                [
-                    new TeamDepthChartDto(
-                        team,
-                        depthChart.Select(position => new PositionDepthChartDto(
-                            position.Key,
-                            position.Value.Values.ToList()
-                        )).ToList()
-                    )
-                ]
-            );
-
-            return teamDepthChart;
+            finally
+            {
+                _lock.ExitReadLock();
+            }
         }
-
     }
 
     public record BackupPlayersDto(int PlayerNumber, string PlayerName);
@@ -150,7 +201,7 @@ namespace DepthCharts
         string Position,
         List<PlayerEntryModel> Players
     );
-    
+
     public interface IDepthChartService
     {
         void AddPlayerToDepthChart(string sport, string team, string position, int playerNumber,
