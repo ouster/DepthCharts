@@ -28,8 +28,8 @@ builder.Services.Configure<DepthChartsUrlsSettings>(builder.Configuration.GetSec
 builder.Services.AddSingleton<DepthChartsUrlsSettings>();
 
 builder.Services.AddScoped<IDepthChartScraper, NflDepthChartScraper>();
-builder.Services.AddScoped<DepthChartScraperService>();
-builder.Services.AddScoped<DepthChartService>();
+builder.Services.AddScoped<DepthChartScraperService>(); 
+builder.Services.AddSingleton<DepthChartService>(); // TODO switch to persistent store like redis
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

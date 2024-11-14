@@ -14,8 +14,10 @@ public class DepthChartController(
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public IActionResult AddPlayerToDepthChart(
-        [UppercaseOnly(ErrorMessage = "The sport code must contain only uppercase letters.")] string sport,
-        [UppercaseOnly(ErrorMessage = "The team code must contain only uppercase letters.")] string team,
+        [UppercaseOnly(ErrorMessage = "The sport code must contain only uppercase letters.")]
+        string sport,
+        [UppercaseOnly(ErrorMessage = "The team code must contain only uppercase letters.")]
+        string team,
         [FromBody] PlayerDto player,
         int? positionDepth)
     {
@@ -30,7 +32,8 @@ public class DepthChartController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [Produces("application/json")]
     public ActionResult<List<PlayerDto>> RemovePlayerFromDepthChart(
-        [UppercaseOnly(ErrorMessage = "The sport code must contain only uppercase letters.")] string sport,
+        [UppercaseOnly(ErrorMessage = "The sport code must contain only uppercase letters.")]
+        string sport,
         [UppercaseOnly(ErrorMessage = "The team code must contain only uppercase letters.")]
         string team, [UppercaseOnly(ErrorMessage = "The name must contain only uppercase letters.")] string position,
         [Required] string player)
@@ -44,8 +47,10 @@ public class DepthChartController(
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]
     public ActionResult<List<PlayerDto>> GetBackups(
-        [UppercaseOnly(ErrorMessage = "The sport code must contain only uppercase letters.")] string sport,
-        [UppercaseOnly(ErrorMessage = "The team code must contain only uppercase letters.")] string team,
+        [UppercaseOnly(ErrorMessage = "The sport code must contain only uppercase letters.")]
+        string sport,
+        [UppercaseOnly(ErrorMessage = "The team code must contain only uppercase letters.")]
+        string team,
         [UppercaseOnly(ErrorMessage = "The player position must contain only uppercase letters.")]
         string position, [Required] string player)
     {
@@ -57,8 +62,10 @@ public class DepthChartController(
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]
     public OkObjectResult GetFullDepthChart(
-        [UppercaseOnly(ErrorMessage = "The sport code must contain only uppercase letters.")] string sport,
-        [UppercaseOnly(ErrorMessage = "The team code must contain only uppercase letters.")] string team)
+        [UppercaseOnly(ErrorMessage = "The sport code must contain only uppercase letters.")]
+        string sport,
+        [UppercaseOnly(ErrorMessage = "The team code must contain only uppercase letters.")]
+        string team)
     {
         return Ok(depthChartService.GetFullDepthChart(sport, team));
     }
@@ -69,10 +76,21 @@ public class DepthChartController(
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]
     public async Task<IActionResult> ScrapeTeamDepthChart(
-        [UppercaseOnly(ErrorMessage = "The sport code must contain only uppercase letters.")] string sport,
-        [UppercaseOnly(ErrorMessage = "The team code must contain only uppercase letters.")] string team)
+        [UppercaseOnly(ErrorMessage = "The sport code must contain only uppercase letters.")]
+        string sport,
+        [UppercaseOnly(ErrorMessage = "The team code must contain only uppercase letters.")]
+        string team)
     {
         var depthChart = await depthChartScraperService.Scrape(sport, team);
+
+        if (depthChart.TeamDepthChartGroupList != null)
+            foreach (var player in depthChart.TeamDepthChartGroupList)
+            {
+                foreach (var entry in player.PositionsDepthList)
+                {
+                    depthChartService.AddPlayerToDepthChart(sport, team, player.Position, entry.PlayerNumber, entry.PlayerName);
+                }
+            }
 
         return Ok(depthChart);
     }
@@ -81,7 +99,8 @@ public class DepthChartController(
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]
     public async Task<IActionResult> ScrapeTeamDepthChartCodes(
-        [UppercaseOnly(ErrorMessage = "The sport code must contain only uppercase letters.")] string sport)
+        [UppercaseOnly(ErrorMessage = "The sport code must contain only uppercase letters.")]
+        string sport)
     {
         var teamCodes = await depthChartScraperService.ScrapeTeamCodes(sport);
 
