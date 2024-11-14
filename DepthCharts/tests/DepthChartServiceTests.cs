@@ -48,31 +48,74 @@ public class DepthChartServiceTests : IDisposable
         }
     }
 
-    [Fact] public void AddPlayerToDepthChart_ShouldAllowAddSamePlayerToTheDepthChartSameDepth()
+    [Fact]
+    public void AddPlayerToDepthChart_ShouldAllowAddSamePlayerToTheDepthChartSameDepth()
     {
         // Arrange
         AddTestPlayers();
-        
+
         // Act
-        _depthChartService.AddPlayerToDepthChart("NFL", "TB", "QB", 12,"Tom Brady", 0);
+        _depthChartService.AddPlayerToDepthChart("NFL", "TB", "QB", 12, "Tom Brady", 0);
 
         // Assert
         AssertPlayerBackups("QB", "Tom Brady", new[] { ("Blaine Gabbert", 11), ("Kyle Trask", 2) });
     }
-    
-    [Fact] public void AddPlayerToDepthChart_ShouldAllowAddSamePlayerToTheDepthChartDeeperDepth()
+
+    [Fact]
+    public void AddPlayerToDepthChart_ShouldAllowAddSamePlayerToTheDepthChartDeeperDepth()
     {
         // Arrange
         AddTestPlayers();
-        
+
         // Act
-        _depthChartService.AddPlayerToDepthChart("NFL", "TB", "QB", 12,"Tom Brady", 3);
+        _depthChartService.AddPlayerToDepthChart("NFL", "TB", "QB", 12, "Tom Brady", 3);
 
         // Assert
-        AssertPlayerBackups("QB", "Tom Brady", [] );
+        AssertPlayerBackups("QB", "Tom Brady", []);
     }
 
-    private void AssertPlayerBackups(string position, string playerName, (string playerName, int playerNumber)[] expectedBackups)
+    [Fact]
+    public void TryRemoveNonExistingPlayers()
+    {
+        // Act
+        var removedPlayer = _depthChartService.RemovePlayerFromDepthChart("NFL", "TB", "QB", "pudding");
+
+        // Assert
+        Assert.Equal([], removedPlayer);
+
+        // Arrange
+        AddTestPlayers();
+
+        // Act
+        removedPlayer = _depthChartService.RemovePlayerFromDepthChart("NFL", "TB", "QB", "pudding");
+
+        // Assert
+        Assert.Equal([], removedPlayer);
+    }
+
+    [Fact]
+    public void TryToAddAndRemoveNonExistingPlayers()
+    {
+        // Arrange
+        _depthChartService.AddPlayerToDepthChart("NFL", "TB", "LWR", 1, "pudding");
+
+        // Act
+        var removedPlayer = _depthChartService.RemovePlayerFromDepthChart("NFL", "TB", "LWR", "pudding");
+        
+        // Assert
+        var expected = new[] { ("pudding", 1) }.ToList();
+        Assert.Equal(expected[0].Item1, removedPlayer[0].PlayerName);
+        Assert.Equal(expected[0].Item2, removedPlayer[0].PlayerNumber);
+
+        // Act
+        removedPlayer = _depthChartService.RemovePlayerFromDepthChart("NFL", "TB", "LWR", "pudding");
+
+        // Assert
+        Assert.Equal([], removedPlayer);
+    }
+
+    private void AssertPlayerBackups(string position, string playerName,
+        (string playerName, int playerNumber)[] expectedBackups)
     {
         var backups = _depthChartService.GetBackups("NFL", "TB", position, playerName);
         Assert.Equal(expectedBackups.Length, backups.Count);
@@ -84,5 +127,7 @@ public class DepthChartServiceTests : IDisposable
         }
     }
 
-    public void Dispose() { }
+    public void Dispose()
+    {
+    }
 }
