@@ -9,11 +9,9 @@ namespace DepthCharts
 {
     /**
      * This is a example implementation keeping the charts in memory
-     * Even if you scrape all of ourlads it's not alot of data to keep in memory
-     * for production, would probably look at a DB or redis with either json serialisation or Redis.OM
+     * Even if you scrape all of ourlads it's not a lot of data to keep in memory
+     * For production, would probably look at a DB or Redis + Redis.OM
      * as you would want to add more sports
-     *
-     * This would remove the need to make this thread safe as well
      */
     public class DepthChartService : IDepthChartService
     {

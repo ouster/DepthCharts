@@ -2,7 +2,13 @@ using Microsoft.Extensions.Options;
 
 namespace DepthCharts;
 
-public class NflDepthChartScraperHttpClientHelper(HttpClient httpClient, IOptions<DepthChartsUrlsSettings> options, ILogger<NflDepthChartScraperHttpClientHelper> logger)
+public interface INflDepthChartScraperHttpClientHelper
+{
+    Task<string> GetTeamDepthChartHtml(string teamName);
+    Task<string> GetTeamDepthChartCodesHtml();
+}
+
+public class NflDepthChartScraperHttpClientHelper(HttpClient httpClient, IOptions<DepthChartsUrlsSettings> options, ILogger<NflDepthChartScraperHttpClientHelper> logger) : INflDepthChartScraperHttpClientHelper
 {
     private readonly DepthChartsUrlsSettings _depthChartsUrlsSettings = options.Value;
     

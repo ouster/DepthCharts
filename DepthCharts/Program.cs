@@ -21,7 +21,7 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 
 
-builder.Services.AddScoped<NflDepthChartScraperHttpClientHelper>();
+builder.Services.AddScoped<INflDepthChartScraperHttpClientHelper, NflDepthChartScraperHttpClientHelper>();
 builder.Services.AddHttpClient<NflDepthChartScraperHttpClientHelper>();
 builder.Services.Configure<DepthChartsUrlsSettings>(builder.Configuration.GetSection("DepthChartsUrls"));
 

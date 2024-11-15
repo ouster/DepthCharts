@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace DepthCharts;
 
-public class NflDepthChartScraper(NflDepthChartScraperHttpClientHelper nflDepthChartScraperHttpClientHelper, ILogger<NflDepthChartScraper> logger) : AbstractDepthChartScraper, IDepthChartScraper 
+public class NflDepthChartScraper(INflDepthChartScraperHttpClientHelper nflDepthChartScraperHttpClientHelper, ILogger<NflDepthChartScraper> logger) : AbstractDepthChartScraper, IDepthChartScraper 
 {
     public string Sport { get; } = "NFL";
 
@@ -82,27 +82,65 @@ public class NflDepthChartScraper(NflDepthChartScraperHttpClientHelper nflDepthC
         logger.LogWarning($"Depth chart for {teamName} is empty");
         return depthChart;
     }
-    
-    static List<string> RepairData(List<string> originalList)
+
+    // internal static List<string> RepairData(List<string> originalList)
+    // {
+    //     var newList = new List<string>();
+    //
+    //     foreach (var entry in originalList)
+    //     {
+    //         if (entry is int || entry is float)  // Check if entry is a number
+    //         {
+    //             newList.Add(entry);
+    //         }
+    //         else if (entry is string)  // Check if entry is a name
+    //         {
+    //             newList.Add("0");  // Add 0 before the name
+    //             newList.Add(entry);
+    //         }
+    //     }
+    //
+    //     return newList;
+    // }
+
+    internal static List<string> RepairData(List<string> originalList)
     {
         var newList = new List<string>();
+        bool expectingName = false; // Track if the next entry should be a name
 
         foreach (var entry in originalList)
         {
-            if (entry is int || entry is float)  // Check if entry is a number
+            if (int.TryParse(entry, out _)) // Check if the entry can be parsed as an integer
             {
-                newList.Add(entry);
+                if (expectingName)
+                {
+                    // If we were expecting a name but found a number, add a placeholder name
+                    newList.Add("Unnamed"); // Placeholder name
+                }
+                newList.Add(entry); // Add the number
+                expectingName = true; // Next, we expect a name
             }
-            else if (entry is string)  // Check if entry is a name
+            else // Treat as a name
             {
-                newList.Add("0");  // Add 0 before the name
-                newList.Add(entry);
+                if (!expectingName)
+                {
+                    // If we encounter a name without a preceding number, add a 0
+                    newList.Add("0");
+                }
+                newList.Add(entry); // Add the name
+                expectingName = false; // Reset the expectation since we just added a name
             }
+        }
+
+        // If we end with a number, add a placeholder name
+        if (expectingName)
+        {
+            newList.Add("Unnamed"); // Placeholder for the last number
         }
 
         return newList;
     }
-
+    
     public async Task<SortedSet<string>> GetTeamDepthChartCodes()
     {
         var html = await nflDepthChartScraperHttpClientHelper.GetTeamDepthChartCodesHtml();
