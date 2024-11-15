@@ -83,16 +83,15 @@ namespace DepthCharts
                 return [];
             }
 
-
-            var playerEntry = depthChart.FirstOrDefault(p => p.Value.PlayerName == playerName);
-            if (playerEntry.Value == null)
-            {
-                return [];
-            }
-
             _lock.EnterReadLock();
             try
             {
+                var playerEntry = depthChart.FirstOrDefault(p => p.Value.PlayerName == playerName);
+                if (playerEntry.Value == null)
+                {
+                    return [];
+                }
+
                 return depthChart
                     .Where(p => p.Key > playerEntry.Key)
                     .Select(p => new BackupPlayersDto(p.Value.PlayerNumber, p.Value.PlayerName))
