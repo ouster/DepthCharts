@@ -35,8 +35,17 @@
     &lt;/TestAncestor&gt;
   &lt;/Or&gt;
 &lt;/SessionState&gt;</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=17b7ef04_002D0041_002D40b8_002D9616_002D4c50dbb4f85b/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="GetTeamDepthChartCodes_ShouldReturnSortedCodes_WhenValidHtmlIsProvided #2" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=17b7ef04_002D0041_002D40b8_002D9616_002D4c50dbb4f85b/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="GetTeamDepthChartCodes_ShouldReturnSortedCodes_WhenValidHtmlIsProvided #2" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
   &lt;Solution /&gt;
+&lt;/SessionState&gt;</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=19f38acb_002D5924_002D4451_002D9189_002Da57b1c952f0a/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="GetBackups_ShouldReturnOk_WhenValidDataIsProvided" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+  &lt;Or&gt;
+    &lt;TestAncestor&gt;
+      &lt;TestId&gt;xUnit::8E53FC13-2746-4FA9-BB5E-A869FCBB9D96::net8.0::DepthChartIntegrationTests.DepthChartControllerTests.GetBackups_ShouldReturnOk_WhenValidDataIsProvided&lt;/TestId&gt;
+    &lt;/TestAncestor&gt;
+    &lt;ProjectFolder&gt;5D449D7C-96B9-4BB0-8D3E-257F02246A51/d:tests&lt;/ProjectFolder&gt;
+    &lt;ProjectFile&gt;8E53FC13-2746-4FA9-BB5E-A869FCBB9D96/f:DepthChartControllerTests.cs&lt;/ProjectFile&gt;
+  &lt;/Or&gt;
 &lt;/SessionState&gt;</s:String>
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=2441640b_002Da70e_002D458e_002D9863_002D584964332ab2/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="GetTeamDepthChartCodes_ShouldReturnSortedCodes_WhenValidHtmlIsProvided" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
   &lt;TestAncestor&gt;
@@ -65,5 +74,12 @@
     &lt;TestId&gt;xUnit::5D449D7C-96B9-4BB0-8D3E-257F02246A51::net8.0::DepthCharts.tests.DefaultAutomapperProfileTests&lt;/TestId&gt;
     &lt;TestId&gt;xUnit::5D449D7C-96B9-4BB0-8D3E-257F02246A51::net8.0::DepthCharts.Tests.DepthChartScraperServiceTests&lt;/TestId&gt;
     &lt;TestId&gt;xUnit::5D449D7C-96B9-4BB0-8D3E-257F02246A51::net8.0::DepthCharts.Tests.NflDepthChartScraperTests&lt;/TestId&gt;
+  &lt;/TestAncestor&gt;
+&lt;/SessionState&gt;</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=ceb4a298_002Dd2f4_002D4c21_002D9508_002D0a005e3dcbb7/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="AddPlayerToDepthChart_ShouldReturnCreated_WhenValidDataIsProvided" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+  &lt;TestAncestor&gt;
+    &lt;TestId&gt;xUnit::8E53FC13-2746-4FA9-BB5E-A869FCBB9D96::net8.0::DepthChartIntegrationTests.DepthChartControllerTests.AddPlayerToDepthChart_ShouldReturnCreated_WhenValidDataIsProvided&lt;/TestId&gt;
+    &lt;TestId&gt;xUnit::8E53FC13-2746-4FA9-BB5E-A869FCBB9D96::net8.0::DepthChartIntegrationTests.DepthChartControllerTests.RemovePlayerFromDepthChart_ShouldReturnNoContent_WhenValidDataIsProvided&lt;/TestId&gt;
+    &lt;TestId&gt;xUnit::8E53FC13-2746-4FA9-BB5E-A869FCBB9D96::net8.0::DepthChartIntegrationTests.DepthChartControllerTests.GetBackups_ShouldReturnOk_WhenValidDataIsProvided&lt;/TestId&gt;
   &lt;/TestAncestor&gt;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>

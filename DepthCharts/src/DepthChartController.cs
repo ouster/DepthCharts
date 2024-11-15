@@ -24,7 +24,8 @@ public class DepthChartController(
         if (!ModelState.IsValid) return BadRequest(ModelState);
         depthChartService.AddPlayerToDepthChart(sport, team, player.Position, player.Number, player.Name,
             positionDepth);
-        return Created();
+        // return Created();
+        return CreatedAtAction(nameof(AddPlayerToDepthChart), new { sport, team, position = player.Position, player.Number }, player);
     }
 
     [HttpDelete($"{{{nameof(sport)}}}/{{{nameof(team)}}}/{{{nameof(position)}}}/{{{nameof(player)}}}")]
@@ -61,7 +62,7 @@ public class DepthChartController(
     [HttpGet($"{{{nameof(sport)}}}/{{{nameof(team)}}}/fullDepthChart")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]
-    public OkObjectResult GetFullDepthChart(
+    public ActionResult<FullDepthChartDto> GetFullDepthChart(
         [UppercaseOnly(ErrorMessage = "The sport code must contain only uppercase letters.")]
         string sport,
         [UppercaseOnly(ErrorMessage = "The team code must contain only uppercase letters.")]
@@ -71,28 +72,34 @@ public class DepthChartController(
     }
 
 
-    // Helper endpoints to test scraping
+    // Helper endpoints to test scraping, do not expose in production
     [HttpGet($"{{{nameof(sport)}}}/{{{nameof(team)}}}/scrape")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [Produces("application/json")]
-    public async Task<IActionResult> ScrapeTeamDepthChart(
+    public async Task<ActionResult<DepthChartModel>> ScrapeTeamDepthChart(
         [UppercaseOnly(ErrorMessage = "The sport code must contain only uppercase letters.")]
         string sport,
         [UppercaseOnly(ErrorMessage = "The team code must contain only uppercase letters.")]
         string team)
     {
-        var depthChart = await depthChartScraperService.Scrape(sport, team);
-
-        if (depthChart.TeamDepthChartGroupList != null)
+        try
+        {
+            var depthChart = await depthChartScraperService.Scrape(sport, team);
+            if (depthChart.TeamDepthChartGroupList == null) return Ok(depthChart);
             foreach (var player in depthChart.TeamDepthChartGroupList)
             {
                 foreach (var entry in player.PositionsDepthList)
                 {
-                    depthChartService.AddPlayerToDepthChart(sport, team, player.Position, entry.PlayerNumber, entry.PlayerName);
+                    depthChartService.AddPlayerToDepthChart(sport, team, player.Position, entry.PlayerNumber,
+                        entry.PlayerName);
                 }
             }
-
-        return Ok(depthChart);
+            return Ok(depthChart);
+        }
+        catch (DepthChartParseException e)
+        {
+            return BadRequest("Unable to parse that depth chart.");
+        }
     }
 
     [HttpGet($"{{{nameof(sport)}}}/scrape/teams")]

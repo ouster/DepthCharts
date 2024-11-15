@@ -19,10 +19,10 @@ public record PlayerDto
     public string Name { get; init; }
     public string Position { get; init; }
 
-    public void Deconstruct(out int Number, out string Name, out string Position)
-    {
-        Number = this.Number;
-        Name = this.Name;
-        Position = this.Position;
-    }
+    // public void Deconstruct(out int Number, out string Name, out string Position)
+    // {
+    //     Number = this.Number;
+    //     Name = this.Name;
+    //     Position = this.Position;
+    // }
 }
